@@ -779,10 +779,10 @@ def log_session(
     user_id,
     ip_address,
     user_agent,
+     device_info,
     location=None,
     latitude=None,
-    longitude=None,
-    device_info
+    longitude=None
 ):
 
     device_id = generate_device_id(
