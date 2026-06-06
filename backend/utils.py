@@ -57,6 +57,49 @@ def get_location_from_ip(ip):
         return city, region, country
     except Exception:
         return "Unknown City", "Unknown Region", "Unknown Country"
+
+import requests
+
+def get_location(lat, lng):
+    url = "https://nominatim.openstreetmap.org/reverse"
+
+    headers = {
+        "User-Agent": "BusinessEssentialApp/1.0 (contact: admin@businessessentia.net)"
+    }
+
+    params = {
+        "lat": lat,
+        "lon": lng,
+        "format": "json"
+    }
+
+    try:
+        response = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=10
+        )
+
+        response.raise_for_status()
+        location_data = response.json()
+
+        address = location_data.get("address", {})
+
+        city = address.get("city") or address.get("town") or address.get("village")
+        state = address.get("state")
+        country = address.get("country")
+
+        return city, state, country
+
+    except requests.exceptions.RequestException as e:
+        print("Location API error:", e)
+        return None, None, None
+
+    except Exception as e:
+        print("Unexpected error:", e)
+        return None, None, None
+
          
 
 def send_email(
