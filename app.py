@@ -1852,7 +1852,7 @@ def verifylogin():
         conn.commit()
         lat = data['lat']
         lng = data['lng']
-        login_ip = get_client_ip()
+        login_ip = get_client_ip(request)
         city, region, country = get_location_from_ip(login_ip)
         citys,state,counts = get_location(lat=lat,lng=lng)
         device_model, client_type, os_name, os_version  = parse_user_agent1(data['user_agent'])
