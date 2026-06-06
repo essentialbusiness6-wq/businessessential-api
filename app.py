@@ -1851,11 +1851,29 @@ def verifylogin():
         city, region, country = get_location_from_ip(login_ip)
         citys,state,counts = get_location(lat=lat,lng=lng)
         device_model, client_type, os_name, os_version  = parse_user_agent1(data['user_agent'])
+        
+        deviceinfo = data['device'] 
+        brand = deviceinfo["brand"]
+        modelName = deviceinfo["modelName"]
+        osName = deviceinfo["osName"]
+        osVersion = deviceinfo["osVersion"]
+      
+
+        def get_client_ip(request):
+            if request.headers.get("X-Forwarded-For"):
+                return request.headers.get("X-Forwarded-For").split(",")[0]
+            return request.remote_addr
+    
+
+        login_ip = get_client_ip(request)
+        country, state, city = get_location_from_ip(login_ip)
 
         location = None
 
         if latitude and longitude:
             location = f"{latitude}, {longitude}"
+        else:
+            location = f"{city},{state},{country}."
 
         session_token = log_session(
             user_id=user_id,
