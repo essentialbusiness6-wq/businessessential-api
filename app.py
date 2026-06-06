@@ -38,6 +38,7 @@ import cloudinary.api
 import os
 from werkzeug.utils import secure_filename
 import requests
+import traceback
 
 
 
