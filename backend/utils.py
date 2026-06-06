@@ -889,6 +889,46 @@ def generate_device_id(user_agent, ip_address):
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+def parse_user_agent1(user_agent_string):
+    ua = parse(user_agent_string)
+
+    # ---------- DEVICE NAME ----------
+    if ua.is_mobile:
+        device_family = ua.device.family
+
+        # Apple devices improvement
+        if device_family in ["iPhone", "iPad"]:
+            device_model = device_family
+        elif device_family == "Generic Smartphone":
+            device_model = "Android Phone"
+        else:
+            device_model = device_family
+
+    elif ua.is_tablet:
+        device_model = ua.device.family or "Tablet"
+
+    elif ua.is_pc:
+        if "Windows" in ua.os.family:
+            device_model = "Windows PC"
+        elif "Mac" in ua.os.family:
+            device_model = "Mac"
+        elif "Linux" in ua.os.family:
+            device_model = "Linux PC"
+        else:
+            device_model = "PC"
+
+    else:
+        device_model = ua.device.family or "Unknown Device"
+
+    # ---------- CLIENT ----------
+    client_type = ua.browser.family or "Unknown Browser"
+
+    # ---------- OS ----------
+    os_name = ua.os.family or "Unknown OS"
+    os_version = ua.os.version_string or ""
+
+
+    return device_model, client_type, os_name, os_version
 
 
 def get_client_ip():
