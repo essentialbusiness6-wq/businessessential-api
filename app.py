@@ -19,7 +19,8 @@ from backend.utils import (
     detect_location,
     save_security_activity,
     check_overdue_invoices,
-    generate_referral_code
+    generate_referral_code,
+    get_db
 )
 import jwt
 from functools import wraps
@@ -31,14 +32,6 @@ from werkzeug.utils import secure_filename
 import requests
 
 
-def get_db():
-    return mysql.connector.connect(
-        host = os.getenv("DB_HOST"),
-        user =  os.getenv("DB_USER"),
-        password =  os.getenv("DB_PASSWORD"),
-        database =  os.getenv("DB_NAME"), 
-        port =  os.getenv("DB_PORT"),
-)
 
 cloudinary.config(
     cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
