@@ -717,8 +717,189 @@ def generate_referral_code(length=8):
     return ''.join(random.choice(characters) for _ in range(length))
 
 
+from uuid import uuid4
+
+import secrets
+
+def log_session(
+    user_id,
+    ip_address,
+    user_agent,
+    location=None,
+    latitude=None,
+    longitude=None
+):
+    device_info = parse_user_agent(user_agent)
+
+    device_id = generate_device_id(
+        user_agent,
+        ip_address
+    )
+
+    session_token = secrets.token_hex(32)
+
+    with db_cursor(dictionary=True) as (conn, cursor):
+
+        cursor.execute(
+            """
+            SELECT id
+            FROM user_sessions
+            WHERE user_id=%s
+            AND device_id=%s
+            """,
+            (user_id, device_id)
+        )
+
+        existing = cursor.fetchone()
+
+        if existing:
+
+            cursor.execute(
+                """
+                UPDATE user_sessions
+                SET
+                    session_token=%s,
+                    ip_address=%s,
+                    location=%s,
+                    latitude=%s,
+                    longitude=%s,
+                    last_active=NOW()
+                WHERE id=%s
+                """,
+                (
+                    session_token,
+                    ip_address,
+                    location,
+                    latitude,
+                    longitude,
+                    existing["id"]
+                )
+            )
+
+        else:
+
+            cursor.execute(
+                """
+                INSERT INTO user_sessions(
+                    user_id,
+                    session_token,
+                    device_id,
+                    device_type,
+                    browser,
+                    os,
+                    ip_address,
+                    location,
+                    latitude,
+                    longitude,
+                    user_agent
+                )
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    user_id,
+                    session_token,
+                    device_id,
+                    device_info.get("device_type"),
+                    device_info.get("browser"),
+                    device_info.get("os"),
+                    ip_address,
+                    location,
+                    latitude,
+                    longitude,
+                    user_agent
+                )
+            )
+
+    return session_token
+
+def update_session_activity(session_token):
+
+    with db_cursor() as (conn, cursor):
+
+        cursor.execute(
+            """
+            UPDATE user_sessions
+            SET last_active=NOW()
+            WHERE session_token=%s
+            """,
+            (session_token,)
+        )
 
 
+
+def get_user_sessions(user_id):
+    with db_cursor(dictionary=True) as (conn, cursor):
+
+        cursor.execute(
+            """
+            SELECT
+                id,
+                device_name,
+                browser,
+                operating_system,
+                location,
+                ip_address,
+                login_at,
+                last_activity,
+                is_active
+            FROM user_sessions
+            WHERE user_id=%s
+            ORDER BY last_activity DESC
+            """,
+            (user_id,)
+        )
+
+        return cursor.fetchall()
+
+def parse_user_agent(user_agent):
+    """
+    Returns:
+    {
+        browser,
+        os,
+        device_type
+    }
+    """
+
+    ua = parse(user_agent)
+
+    if ua.is_mobile:
+        device_type = "Mobile"
+
+    elif ua.is_tablet:
+        device_type = "Tablet"
+
+    elif ua.is_pc:
+        device_type = "Desktop"
+
+    else:
+        device_type = "Unknown"
+
+    return {
+        "browser": f"{ua.browser.family} {ua.browser.version_string}",
+        "os": f"{ua.os.family} {ua.os.version_string}",
+        "device_type": device_type
+    }
+
+
+
+
+def generate_device_id(user_agent, ip_address):
+    raw = f"{user_agent}{ip_address}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+
+
+def get_client_ip():
+    forwarded = request.headers.get(
+        "X-Forwarded-For"
+    )
+
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+
+    return request.remote_addr
 
 
 
