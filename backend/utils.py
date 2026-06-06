@@ -46,7 +46,18 @@ def get_db():
 
 
 
+def get_location_from_ip(ip):
+    try:
+        response = requests.get(f"https://ipinfo.io/{ip}/json", timeout=5)
+        data = response.json()
 
+        city = data.get("city", "Unknown City")
+        region = data.get("region", "Unknown Region")
+        country = data.get("country", "Unknown Country")
+        return city, region, country
+    except Exception:
+        return "Unknown City", "Unknown Region", "Unknown Country"
+         
 
 def send_email(
     recipient: str,
