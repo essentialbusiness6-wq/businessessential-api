@@ -781,9 +781,9 @@ def log_session(
     user_agent,
     location=None,
     latitude=None,
-    longitude=None
+    longitude=None,
+    device_info
 ):
-    device_info = parse_user_agent(user_agent)
 
     device_id = generate_device_id(
         user_agent,
@@ -853,9 +853,9 @@ def log_session(
                     user_id,
                     session_token,
                     device_id,
-                    device_info.get("device_type"),
-                    device_info.get("browser"),
-                    device_info.get("os"),
+                    device_info.get("modelName"),
+                    device_info.get("brand"),
+                    f"{device_info.get("osName")} {device_info.get("osVersion")}",
                     ip_address,
                     location,
                     latitude,
