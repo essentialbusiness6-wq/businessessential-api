@@ -20,7 +20,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from typing import Optional
 from datetime import datetime,timedelta
 import string
-
+from mysql.connector.pooling import MySQLConnectionPool
+import hashlib
 
 
 load_dotenv()
@@ -30,14 +31,20 @@ load_dotenv()
 CONFIG_FILE = "config.json"
 
 
-def get_db():
-    return mysql.connector.connect(
-        host = os.getenv("DB_HOST"),
-        user =  os.getenv("DB_USER"),
-        password =  os.getenv("DB_PASSWORD"),
-        database =  os.getenv("DB_NAME"), 
-        port =  os.getenv("DB_PORT"),
+db_pool = MySQLConnectionPool(
+    pool_name="business_pool",
+    pool_size=20,
+    host= os.getenv("DBHOST"),
+    user= os.getenv("DBUSER"),
+    password = os.getenv("DBPASS"),
+    database = os.getenv("DB"),
+    port= os.getenv("DBPORT")
 )
+
+def get_db():
+    return db_pool.get_connection()
+
+
 
 
 
@@ -116,21 +123,34 @@ def send_email_async(recipient: str, subject: str, body: str, html: bool=False, 
 
     
 def get_user_id(username):
-     conn = get_db()
-     cursor = conn.cursor()
-     cursor.execute(
-          """
-          SELECT user_id
-          FROM user_base
-          WHERE username=%s
-          """,
-         (username,)
-     )
-     user = cursor.fetchone()
-     cursor.close()
-     conn.close()
+    conn = None
+    cursor = None
 
-     return user[0] if user else None
+    try:
+        conn = get_db()
+        cursor = conn.cursor(buffered=True)
+
+        cursor.execute(
+            "SELECT user_id, username FROM user_base WHERE username=%s",
+            (username,)
+        )
+
+        user = cursor.fetchone()
+
+        if not user:
+            return None
+
+        return user[0]
+
+    except Exception as e:
+        print(f"Failed to get user id: {e}")
+        return None
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -564,35 +584,61 @@ def generate_reference(invoice_prefix):
     return f"{invoice_prefix}-{timestamp}-{rand}"
 
 
-def save_log_activity(user_id, type_, title, description, amount: Optional[float] = None, status: Optional[str] = None):
-     conn = get_db()
-     cursor = conn.cursor()
-     if not amount and status:
-          cursor.execute(
-               "INSERT INTO log_activity (user_id, type, title, description) VALUES (%s,%s,%s,%s)",
-               (user_id, type_, title, description)
-          )
-   
-     cursor.execute(
-          "INSERT INTO log_activity (user_id, type, title, description,amount,status) VALUES (%s,%s,%s,%s,%s,%s)",
-          (user_id, type_, title, description,amount,status)
-     )
+from contextlib import contextmanager
 
-     conn.commit()
-     cursor.close()
-     conn.close()
+@contextmanager
+def db_cursor(dictionary=False):
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=dictionary,buffered=True)
+
+        yield conn, cursor
+
+        conn.commit()
+
+    except:
+        if conn:
+            conn.rollback()
+        raise
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+
+def save_log_activity(
+    user_id,
+    type_,
+    title,
+    description,
+    amount: Optional[float] = None,
+    status: Optional[str] = None
+):
+    with db_cursor() as (conn, cursor):
+        cursor.execute(
+            """
+            INSERT INTO log_activity
+            (user_id, type, title, description, amount, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (user_id, type_, title, description, amount, status)
+        )
+
+
 
 def save_security_activity(user_id, type_, title, description,severity, ip_address):
-     conn = get_db()
-     cursor = conn.cursor()
-     cursor.execute(
-        "INSERT INTO security_activity (user_id, type, title, description,severity,ip_address) VALUES (%s,%s,%s,%s,%s,%s)",
-        (user_id, type_, title, description,severity,ip_address)
-     )
-
-     conn.commit()
-     cursor.close()
-     conn.close()
+     with db_cursor() as (conn, cursor):
+          cursor.execute(
+             "INSERT INTO security_activity (user_id, type, title, description,severity,ip_address) VALUES (%s,%s,%s,%s,%s,%s)",
+             (user_id, type_, title, description,severity,ip_address)
+          )
 
 def parse_user_agent(user_agent_string):
     ua = parse(user_agent_string)
