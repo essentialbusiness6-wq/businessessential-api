@@ -1879,10 +1879,8 @@ def verifylogin():
             location=location,
             latitude=latitude,
             longitude=longitude,
-            deviceinfo 
+            device_info=deviceinfo 
         )
-
-
         session["session_token"] = session_token
 
         
