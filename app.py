@@ -2041,16 +2041,10 @@ def verifylogin():
 
         response = make_response(jsonify({
             "status": "success",
-            "message": "Login successful"
+            "message": "Login successful",
+            "token":token
         }))
-        response.set_cookie(
-            "access_token",
-            token,
-            httponly=True,
-            secure=True,  
-            samesite="Lax",
-            max_age=60 * 60 * 24 * 7
-        )
+
         return response, 200
 
     except Exception as e:
