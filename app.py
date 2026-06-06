@@ -1694,8 +1694,13 @@ def verifylogin():
 
     latitude = data.get("lat")
     longitude = data.get("lng")
-
-    ip_address = get_client_ip()
+    
+    def get_client_ip(request):
+        if request.headers.get("X-Forwarded-For"):
+            return request.headers.get("X-Forwarded-For").split(",")[0]
+        return request.remote_addr
+        
+    ip_address = get_client_ip(request)
 
     conn = get_db()
     cursor = conn.cursor(buffered=True)
@@ -1853,13 +1858,6 @@ def verifylogin():
         device_model, client_type, os_name, os_version  = parse_user_agent1(data['user_agent'])
         
         deviceinfo = data['device'] 
-
-      
-
-        def get_client_ip(request):
-            if request.headers.get("X-Forwarded-For"):
-                return request.headers.get("X-Forwarded-For").split(",")[0]
-            return request.remote_addr
     
 
         login_ip = get_client_ip(request)
