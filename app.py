@@ -1853,10 +1853,7 @@ def verifylogin():
         device_model, client_type, os_name, os_version  = parse_user_agent1(data['user_agent'])
         
         deviceinfo = data['device'] 
-        brand = deviceinfo["brand"]
-        modelName = deviceinfo["modelName"]
-        osName = deviceinfo["osName"]
-        osVersion = deviceinfo["osVersion"]
+
       
 
         def get_client_ip(request):
@@ -1881,7 +1878,8 @@ def verifylogin():
             user_agent=user_agent,
             location=location,
             latitude=latitude,
-            longitude=longitude
+            longitude=longitude,
+            deviceinfo 
         )
 
 
