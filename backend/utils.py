@@ -778,15 +778,14 @@ import secrets
 def log_session(
     user_id,
     ip_address,
-    user_agent,
-     device_info,
+    device_info,
     location=None,
     latitude=None,
-    longitude=None
+    longitude=None,
+     user_agent=None
 ):
 
     device_id = generate_device_id(
-        user_agent,
         ip_address
     )
 
@@ -938,8 +937,8 @@ def parse_user_agent(user_agent):
 
 
 
-def generate_device_id(user_agent, ip_address):
-    raw = f"{user_agent}{ip_address}"
+def generate_device_id(ip_address):
+    raw = f"{ip_address}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
