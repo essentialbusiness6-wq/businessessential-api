@@ -1690,7 +1690,6 @@ def verifylogin():
                 "message": f"Missing field: {field}"
             }), 400
         
-    user_agent = data.get("user_agent")
 
     latitude = data.get("lat")
     longitude = data.get("lng")
@@ -1852,16 +1851,19 @@ def verifylogin():
         conn.commit()
         lat = data['lat']
         lng = data['lng']
-        login_ip = get_client_ip(request)
-        city, region, country = get_location_from_ip(login_ip)
-        citys,state,counts = get_location(lat=lat,lng=lng)
-        device_model, client_type, os_name, os_version  = parse_user_agent1(data['user_agent'])
+  
+        
         
         deviceinfo = data['device'] 
+        device_model= deviceinfo['modelName']
+        os_name = deviceinfo['osName']
+        os_version = deviceinfo['osVersion']
+        client_type = deviceinfo['brand']
     
 
         login_ip = get_client_ip(request)
-        country, state, city = get_location_from_ip(login_ip)
+        city, region, country = get_location_from_ip(login_ip)
+        citys,state,counts = get_location(lat=lat,lng=lng)
 
         location = None
 
@@ -1873,7 +1875,6 @@ def verifylogin():
         session_token = log_session(
             user_id=user_id,
             ip_address=ip_address,
-            user_agent=user_agent,
             location=location,
             latitude=latitude,
             longitude=longitude,
