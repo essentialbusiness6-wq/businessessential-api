@@ -32,7 +32,7 @@ CONFIG_FILE = "config.json"
 
 
 db_pool = MySQLConnectionPool(
-    pool_name="business_pool",
+    pool_name="business_pool_api",
     pool_size=20,
     host= os.getenv("DBHOST"),
     user= os.getenv("DBUSER"),
